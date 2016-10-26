@@ -9,7 +9,7 @@
 
 	<parent>
 		<groupId>org.springframework.cloud.stream.app</groupId>
-		<artifactId>spring-cloud-stream-http-parent</artifactId>
+		<artifactId>app-starters-parent</artifactId>
 		<version>1.1.0.BUILD-SNAPSHOT</version>
 	</parent>
 

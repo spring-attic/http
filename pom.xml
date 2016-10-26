@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>spring-cloud-stream-http-parent</artifactId>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>org.springframework.cloud.stream.app</groupId>
+		<artifactId>app-starters-parent</artifactId>
+		<version>1.1.0.BUILD-SNAPSHOT</version>
+		<relativePath/>
+	</parent>
+
+	<modules>
+		<module>spring-cloud-starter-stream-source-http</module>
+		<module>http-app-dependencies</module>
+		<module>http-app-generator</module>
+	</modules>
+
+</project>

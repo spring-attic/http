@@ -9,7 +9,7 @@
 
 	<parent>
 		<groupId>org.springframework.cloud.stream.app</groupId>
-		<artifactId>app-starters-parent</artifactId>
+		<artifactId>http-app-starters-build</artifactId>
 		<version>1.1.0.BUILD-SNAPSHOT</version>
 	</parent>
 
@@ -19,4 +19,30 @@
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-app-starter-doc-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.springframework.cloud.stream.app.plugin</groupId>
+				<artifactId>spring-cloud-stream-app-maven-plugin</artifactId>
+				<configuration>
+					<generatedProjectHome>${session.executionRootDirectory}/apps</generatedProjectHome>
+					<generatedProjectVersion>${project.version}</generatedProjectVersion>
+					<bom>
+						<name>scs-bom</name>
+						<groupId>org.springframework.cloud.stream.app</groupId>
+						<artifactId>http-app-dependencies</artifactId>
+						<version>${project.version}</version>
+					</bom>
+					<generatedApps>
+						<http-source/>
+					</generatedApps>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>

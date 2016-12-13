@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>http-app-dependencies</artifactId>
-    <version>1.1.1.RELEASE</version>
+    <version>1.1.2.BUILD-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>http-app-dependencies</name>
     <description>Spring Cloud Stream HTTP App Dependencies</description>
@@ -18,7 +18,7 @@
             <dependency>
                 <groupId>org.springframework.cloud.stream.app</groupId>
                 <artifactId>spring-cloud-starter-stream-source-http</artifactId>
-                <version>1.1.1.RELEASE</version>
+                <version>1.1.2.BUILD-SNAPSHOT</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

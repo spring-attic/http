@@ -16,11 +16,6 @@
 
 package org.springframework.cloud.stream.app.http.source;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.springframework.cloud.stream.test.matcher.MessageQueueMatcher.receivesPayloadThat;
-
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
@@ -31,8 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.boot.test.WebIntegrationTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
@@ -47,6 +41,11 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.client.RestTemplate;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.springframework.cloud.stream.test.matcher.MessageQueueMatcher.receivesPayloadThat;
+
 /**
  * Tests for HttpSourceConfiguration.
  *
@@ -55,7 +54,6 @@ import org.springframework.web.client.RestTemplate;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = HttpSourceTests.HttpSourceApplication.class)
 public abstract class HttpSourceTests {
 
 	@Autowired
@@ -70,7 +68,7 @@ public abstract class HttpSourceTests {
 
 	protected RestTemplate restTemplate = new RestTemplate();
 
-	@WebIntegrationTest(value = "http.pathPattern=/foo", randomPort = true)
+	@SpringBootTest(value = "http.pathPattern=/foo", webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 	public static class SimpleMappingTests extends HttpSourceTests {
 
 		@Test
@@ -101,7 +99,7 @@ public abstract class HttpSourceTests {
 		}
 	}
 
-	@WebIntegrationTest(randomPort = true)
+	@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 	public static class DefaultMappingTests extends HttpSourceTests {
 
 		@Test

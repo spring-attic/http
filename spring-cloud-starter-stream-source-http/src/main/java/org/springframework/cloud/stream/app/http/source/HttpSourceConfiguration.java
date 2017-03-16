@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,20 @@
 
 package org.springframework.cloud.stream.app.http.source;
 
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
-
-import java.util.Collections;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.http.HttpHeaders;
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.integration.dsl.http.BaseHttpInboundEndpointSpec;
+import org.springframework.integration.dsl.http.Http;
+import org.springframework.integration.dsl.http.HttpRequestHandlerEndpointSpec;
+import org.springframework.integration.dsl.support.Consumer;
+import org.springframework.integration.expression.ValueExpression;
+import org.springframework.integration.http.inbound.HttpRequestHandlingEndpointSupport;
+import org.springframework.integration.http.support.DefaultHttpHeaderMapper;
 
 /**
  * A source module that listens for HTTP requests and emits the body as a message payload.
@@ -41,28 +39,50 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * @author Eric Bottard
  * @author Mark Fisher
  * @author Marius Bogoevici
+ * @author Artem Bilan
  */
-@Controller
 @EnableBinding(Source.class)
+@EnableConfigurationProperties(HttpSourceProperties.class)
 public class HttpSourceConfiguration {
 
 	@Autowired
 	private Source channels;
 
-	@RequestMapping(path = "${http.pathPattern:/}", method = POST, consumes = {"text/*", "application/json"})
-	@ResponseStatus(HttpStatus.ACCEPTED)
-	public void handleRequest(@RequestBody String body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
-		sendMessage(body, contentType);
+	@Autowired
+	private HttpSourceProperties properties;
+
+	@Bean
+	public HttpRequestHandlingEndpointSupport httpSourceString() {
+		return buildHttpRequestHandlerEndpointSpec("text/*", "application/json")
+				.requestPayloadType(String.class)
+				.get();
 	}
 
-	@RequestMapping(path = "${http.pathPattern:/}", method = POST, consumes = "*/*")
-	@ResponseStatus(HttpStatus.ACCEPTED)
-	public void handleRequest(@RequestBody byte[] body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
-		sendMessage(body, contentType);
+	@Bean
+	public HttpRequestHandlingEndpointSupport httpSourceBytes() {
+		return buildHttpRequestHandlerEndpointSpec("*/*")
+				.get();
 	}
 
-	private void sendMessage(Object body, Object contentType) {
-		channels.output().send(MessageBuilder.createMessage(body,
-				new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
+	private HttpRequestHandlerEndpointSpec buildHttpRequestHandlerEndpointSpec(final String... consumes) {
+		// TODO Until SI Java DSL 1.2.2. Use mappedRequestHeaders() instead
+		DefaultHttpHeaderMapper defaultHttpHeaderMapper = DefaultHttpHeaderMapper.inboundMapper();
+		defaultHttpHeaderMapper.setInboundHeaderNames(this.properties.getMappedRequestHeaders());
+
+		return Http.inboundChannelAdapter(this.properties.getPathPattern())
+				.headerMapper(defaultHttpHeaderMapper)
+//				.mappedRequestHeaders(this.properties.getMappedRequestHeaders())
+				.statusCodeExpression(new ValueExpression<>(HttpStatus.ACCEPTED))
+				.requestMapping(new Consumer<BaseHttpInboundEndpointSpec.RequestMappingSpec>() {
+
+					@Override
+					public void accept(BaseHttpInboundEndpointSpec.RequestMappingSpec requestMappingSpec) {
+						requestMappingSpec.methods(HttpMethod.POST)
+								.consumes(consumes);
+					}
+
+				})
+				.requestChannel(this.channels.output());
 	}
+
 }

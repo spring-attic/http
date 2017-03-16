@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,28 @@
 
 package org.springframework.cloud.stream.app.http.source;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.springframework.cloud.stream.test.matcher.MessageQueueMatcher.receivesPayloadThat;
+import static org.springframework.integration.test.matcher.HeaderMatcher.hasHeader;
+import static org.springframework.integration.test.matcher.PayloadMatcher.hasPayload;
+
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.annotation.Bindings;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.http.HttpHeaders;
@@ -38,13 +48,8 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.web.client.RestTemplate;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.springframework.cloud.stream.test.matcher.MessageQueueMatcher.receivesPayloadThat;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringRunner;
 
 /**
  * Tests for HttpSourceConfiguration.
@@ -52,23 +57,33 @@ import static org.springframework.cloud.stream.test.matcher.MessageQueueMatcher.
  * @author Eric Bottard
  * @author Mark Fisher
  * @author Marius Bogoevici
+ * @author Artem Bilan
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public abstract class HttpSourceTests {
 
 	@Autowired
-	@Bindings(HttpSourceConfiguration.class)
+	private SecurityProperties securityProperties;
+
+	@Autowired
 	protected Source channels;
 
-	@Value("${local.server.port}")
+	@LocalServerPort
 	protected int port;
 
 	@Autowired
 	protected MessageCollector messageCollector;
 
-	protected RestTemplate restTemplate = new RestTemplate();
+	protected TestRestTemplate restTemplate;
 
-	@SpringBootTest(value = "http.pathPattern=/foo", webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+	@Before
+	public void setup() {
+		this.restTemplate = new TestRestTemplate(this.securityProperties.getUser().getName(),
+				this.securityProperties.getUser().getPassword());
+	}
+
+	@TestPropertySource(properties = "http.pathPattern=/foo")
 	public static class SimpleMappingTests extends HttpSourceTests {
 
 		@Test
@@ -90,24 +105,33 @@ public abstract class HttpSourceTests {
 			String json = "{\"foo\":1,\"bar\":true}";
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON);
+			headers.set("foo", "bar");
 			RequestEntity<String> request = new RequestEntity<String>(json, headers, HttpMethod.POST, new URI("http://localhost:" + port + "/foo"));
 			ResponseEntity<?> response = restTemplate.exchange(request, Object.class);
 			assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
 			Message<?> message = messageCollector.forChannel(channels.output()).poll(1, TimeUnit.SECONDS);
 			assertEquals(json, message.getPayload());
-			assertEquals("application/json", message.getHeaders().get(MessageHeaders.CONTENT_TYPE));
+			assertEquals(MediaType.APPLICATION_JSON_UTF8, message.getHeaders().get(MessageHeaders.CONTENT_TYPE));
+			assertFalse(message.getHeaders().containsKey("foo"));
 		}
+
 	}
 
-	@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+	@TestPropertySource(properties = "http.mappedRequestHeaders = *")
 	public static class DefaultMappingTests extends HttpSourceTests {
 
 		@Test
-		public void testText() {
-			ResponseEntity<?> entity = restTemplate.postForEntity("http://localhost:" + port, "hello", Object.class);
-			assertEquals(HttpStatus.ACCEPTED, entity.getStatusCode());
-			assertThat(messageCollector.forChannel(channels.output()), receivesPayloadThat(is("hello")));
+		public void testText() throws Exception {
+			HttpHeaders headers = new HttpHeaders();
+			headers.set("foo", "bar");
+			RequestEntity<String> request = new RequestEntity<String>("hello", headers, HttpMethod.POST, new URI("http://localhost:" + port));
+			ResponseEntity<?> response = restTemplate.exchange(request, Object.class);
+			assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
+			Message<?> message = messageCollector.forChannel(channels.output()).poll(1, TimeUnit.SECONDS);
+			assertThat(message, hasPayload("hello"));
+			assertThat(message, hasHeader("foo", "bar"));
 		}
+
 	}
 
 	@SpringBootApplication

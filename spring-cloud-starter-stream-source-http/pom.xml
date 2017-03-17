@@ -15,8 +15,12 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter</artifactId>
+			<groupId>org.springframework.integration</groupId>
+			<artifactId>spring-integration-http</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.integration</groupId>
+			<artifactId>spring-integration-java-dsl</artifactId>
 		</dependency>
 	</dependencies>
 
@@ -41,16 +45,6 @@
 					<generatedApps>
 						<http-source/>
 					</generatedApps>
-				</configuration>
-			</plugin>
-			<plugin>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<classpathDependencyExcludes>
-						<classpathDependencyExclude>org.springframework.security:spring-security-config</classpathDependencyExclude>
-						<classpathDependencyExclude>org.springframework.security:spring-security-core</classpathDependencyExclude>
-						<classpathDependencyExclude>org.springframework.security:spring-security-web</classpathDependencyExclude>
-					</classpathDependencyExcludes>
 				</configuration>
 			</plugin>
 		</plugins>

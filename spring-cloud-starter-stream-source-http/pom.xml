@@ -47,16 +47,6 @@
 					</generatedApps>
 				</configuration>
 			</plugin>
-			<plugin>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<classpathDependencyExcludes>
-						<classpathDependencyExclude>org.springframework.security:spring-security-config</classpathDependencyExclude>
-						<classpathDependencyExclude>org.springframework.security:spring-security-core</classpathDependencyExclude>
-						<classpathDependencyExclude>org.springframework.security:spring-security-web</classpathDependencyExclude>
-					</classpathDependencyExcludes>
-				</configuration>
-			</plugin>
 		</plugins>
 	</build>
 </project>

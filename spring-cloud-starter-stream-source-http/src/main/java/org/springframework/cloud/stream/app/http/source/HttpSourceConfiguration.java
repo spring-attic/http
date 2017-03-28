@@ -17,10 +17,12 @@
 package org.springframework.cloud.stream.app.http.source;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.integration.dsl.http.BaseHttpInboundEndpointSpec;
@@ -30,6 +32,7 @@ import org.springframework.integration.dsl.support.Consumer;
 import org.springframework.integration.expression.ValueExpression;
 import org.springframework.integration.http.inbound.HttpRequestHandlingEndpointSupport;
 import org.springframework.integration.http.support.DefaultHttpHeaderMapper;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
 /**
  * A source module that listens for HTTP requests and emits the body as a message payload.
@@ -83,6 +86,13 @@ public class HttpSourceConfiguration {
 
 				})
 				.requestChannel(this.channels.output());
+	}
+
+	@Configuration
+	@ConditionalOnProperty(prefix = "http", name = "secured", havingValue = "false", matchIfMissing = true)
+	@EnableWebSecurity
+	protected static class DisableSecurityConfiguration {
+
 	}
 
 }

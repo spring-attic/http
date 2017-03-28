@@ -20,11 +20,13 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.springframework.cloud.stream.test.matcher.MessageQueueMatcher.receivesPayloadThat;
 import static org.springframework.integration.test.matcher.HeaderMatcher.hasHeader;
 import static org.springframework.integration.test.matcher.PayloadMatcher.hasPayload;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
@@ -64,9 +66,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 public abstract class HttpSourceTests {
 
 	@Autowired
-	private SecurityProperties securityProperties;
-
-	@Autowired
 	protected Source channels;
 
 	@LocalServerPort
@@ -79,8 +78,7 @@ public abstract class HttpSourceTests {
 
 	@Before
 	public void setup() {
-		this.restTemplate = new TestRestTemplate(this.securityProperties.getUser().getName(),
-				this.securityProperties.getUser().getPassword());
+		this.restTemplate = new TestRestTemplate();
 	}
 
 	@TestPropertySource(properties = "http.pathPattern=/foo")
@@ -115,10 +113,41 @@ public abstract class HttpSourceTests {
 			assertFalse(message.getHeaders().containsKey("foo"));
 		}
 
+		@Test
+		@SuppressWarnings("rawtypes")
+		public void testHealthEndpoint() throws Exception {
+			ResponseEntity<Map> response = this.restTemplate.getForEntity("http://localhost:" + port + "/health", Map.class);
+			assertEquals(HttpStatus.OK, response.getStatusCode());
+			assertTrue(response.hasBody());
+
+			Map health = response.getBody();
+
+			assertEquals("UP", health.get("status"));
+			assertFalse(health.containsKey("diskSpace"));
+		}
+
+		@Test
+		@SuppressWarnings("rawtypes")
+		public void testEnvEndpoint() throws Exception {
+			ResponseEntity<Map> response = this.restTemplate.getForEntity("http://localhost:" + port + "/env", Map.class);
+			assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+			assertTrue(response.hasBody());
+			assertEquals("Full authentication is required to access this resource", response.getBody().get("message"));
+		}
+
 	}
 
-	@TestPropertySource(properties = "http.mappedRequestHeaders = *")
+	@TestPropertySource(properties = {"http.mappedRequestHeaders = *", "http.secured = true"})
 	public static class DefaultMappingTests extends HttpSourceTests {
+
+		@Autowired
+		private SecurityProperties securityProperties;
+
+		@Before
+		public void setup() {
+			this.restTemplate = new TestRestTemplate(this.securityProperties.getUser().getName(),
+				this.securityProperties.getUser().getPassword());
+		}
 
 		@Test
 		public void testText() throws Exception {
@@ -130,6 +159,35 @@ public abstract class HttpSourceTests {
 			Message<?> message = messageCollector.forChannel(channels.output()).poll(1, TimeUnit.SECONDS);
 			assertThat(message, hasPayload("hello"));
 			assertThat(message, hasHeader("foo", "bar"));
+		}
+
+		@Test
+		@SuppressWarnings("rawtypes")
+		public void testHealthEndpoint() throws Exception {
+			ResponseEntity<Map> response = this.restTemplate.getForEntity("http://localhost:" + port + "/health", Map.class);
+			assertEquals(HttpStatus.OK, response.getStatusCode());
+			assertTrue(response.hasBody());
+
+			Map health = response.getBody();
+
+			assertEquals("UP", health.get("status"));
+			assertTrue(health.containsKey("diskSpace"));
+		}
+
+		@Test
+		@SuppressWarnings("rawtypes")
+		public void testEnvEndpoint() throws Exception {
+			ResponseEntity<Map> response = this.restTemplate.getForEntity("http://localhost:" + port + "/env", Map.class);
+			assertEquals(HttpStatus.OK, response.getStatusCode());
+			assertTrue(response.hasBody());
+
+			Map env = response.getBody();
+
+			assertTrue(env.containsKey("server.ports"));
+
+			Map ports = (Map) env.get("server.ports");
+
+			assertEquals(this.port, ports.get("local.server.port"));
 		}
 
 	}

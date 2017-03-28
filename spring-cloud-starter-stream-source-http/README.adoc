@@ -12,6 +12,7 @@ The **$$http$$** $$source$$ supports the following configuration properties:
 //tag::configuration-properties[]
 $$http.mapped-request-headers$$:: $$Headers that will be mapped.$$ *($$String[]$$, default: `$$<none>$$`)*
 $$http.path-pattern$$:: $$An Ant-Style pattern to determine which http requests will be captured.$$ *($$String$$, default: `$$/$$`)*
+$$http.secured$$:: $$Secure or not HTTP source path.$$ *($$boolean$$, default: `$$false$$`)*
 $$server.port$$:: $$Server HTTP port.$$ *($$Integer$$, default: `$$<none>$$`)*
 //end::configuration-properties[]
 

@@ -20,12 +20,14 @@ import org.hibernate.validator.constraints.NotEmpty;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.integration.http.support.DefaultHttpHeaderMapper;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * @author Artem Bilan
  *
  */
 @ConfigurationProperties("http")
+@Validated
 public class HttpSourceProperties {
 
 	/**

@@ -31,7 +31,6 @@ import org.springframework.integration.dsl.http.HttpRequestHandlerEndpointSpec;
 import org.springframework.integration.dsl.support.Consumer;
 import org.springframework.integration.expression.ValueExpression;
 import org.springframework.integration.http.inbound.HttpRequestHandlingEndpointSupport;
-import org.springframework.integration.http.support.DefaultHttpHeaderMapper;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
 /**
@@ -43,6 +42,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
  * @author Mark Fisher
  * @author Marius Bogoevici
  * @author Artem Bilan
+ * @author Gary Russell
  */
 @EnableBinding(Source.class)
 @EnableConfigurationProperties(HttpSourceProperties.class)
@@ -69,7 +69,8 @@ public class HttpSourceConfiguration {
 
 	private HttpRequestHandlerEndpointSpec buildHttpRequestHandlerEndpointSpec(final String... consumes) {
 		// TODO Until SI Java DSL 1.2.2. Use mappedRequestHeaders() instead
-		DefaultHttpHeaderMapper defaultHttpHeaderMapper = DefaultHttpHeaderMapper.inboundMapper();
+		DefaultMixedCaseContentTypeHttpHeaderMapper defaultHttpHeaderMapper =
+				DefaultMixedCaseContentTypeHttpHeaderMapper.inboundMapper();
 		defaultHttpHeaderMapper.setInboundHeaderNames(this.properties.getMappedRequestHeaders());
 
 		return Http.inboundChannelAdapter(this.properties.getPathPattern())

@@ -60,6 +60,7 @@ import org.springframework.test.context.junit4.SpringRunner;
  * @author Mark Fisher
  * @author Marius Bogoevici
  * @author Artem Bilan
+ * @author Gary Russell
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -102,7 +103,22 @@ public abstract class HttpSourceTests {
 		public void testJson() throws Exception {
 			String json = "{\"foo\":1,\"bar\":true}";
 			HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.APPLICATION_JSON);
+			headers.setContentType(MediaType.APPLICATION_JSON); // ends up as Content-Type in mapper
+			headers.set("foo", "bar");
+			RequestEntity<String> request = new RequestEntity<String>(json, headers, HttpMethod.POST, new URI("http://localhost:" + port + "/foo"));
+			ResponseEntity<?> response = restTemplate.exchange(request, Object.class);
+			assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
+			Message<?> message = messageCollector.forChannel(channels.output()).poll(1, TimeUnit.SECONDS);
+			assertEquals(json, message.getPayload());
+			assertEquals(MediaType.APPLICATION_JSON_UTF8, message.getHeaders().get(MessageHeaders.CONTENT_TYPE));
+			assertFalse(message.getHeaders().containsKey("foo"));
+		}
+
+		@Test
+		public void testJsonLowerCaseContentType() throws Exception {
+			String json = "{\"foo\":1,\"bar\":true}";
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_JSON_UTF8); // ends up as content-type in mapper
 			headers.set("foo", "bar");
 			RequestEntity<String> request = new RequestEntity<String>(json, headers, HttpMethod.POST, new URI("http://localhost:" + port + "/foo"));
 			ResponseEntity<?> response = restTemplate.exchange(request, Object.class);
@@ -143,6 +159,7 @@ public abstract class HttpSourceTests {
 		@Autowired
 		private SecurityProperties securityProperties;
 
+		@Override
 		@Before
 		public void setup() {
 			this.restTemplate = new TestRestTemplate(this.securityProperties.getUser().getName(),

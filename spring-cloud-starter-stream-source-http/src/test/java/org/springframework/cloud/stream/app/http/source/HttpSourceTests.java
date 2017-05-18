@@ -83,7 +83,7 @@ public abstract class HttpSourceTests {
 	}
 
 	@TestPropertySource(properties = "http.pathPattern=/foo")
-	public static class SimpleMappingTests extends HttpSourceTests {
+	public static class NonSecuredTests extends HttpSourceTests {
 
 		@Test
 		public void testText() {
@@ -153,8 +153,51 @@ public abstract class HttpSourceTests {
 
 	}
 
-	@TestPropertySource(properties = {"http.mappedRequestHeaders = *", "http.secured = true"})
-	public static class DefaultMappingTests extends HttpSourceTests {
+
+	@TestPropertySource(properties = "management.security.enabled=false")
+	public static class NonSecuredManagementDisabledTests extends HttpSourceTests {
+
+		@Test
+		public void testText() {
+			ResponseEntity<?> entity = restTemplate.postForEntity("http://localhost:" + port, "hello", Object.class);
+			assertEquals(HttpStatus.ACCEPTED, entity.getStatusCode());
+			assertThat(messageCollector.forChannel(channels.output()), receivesPayloadThat(is("hello")));
+		}
+
+		@Test
+		@SuppressWarnings("rawtypes")
+		public void testHealthEndpoint() throws Exception {
+			ResponseEntity<Map> response = this.restTemplate.getForEntity("http://localhost:" + port + "/health", Map.class);
+			assertEquals(HttpStatus.OK, response.getStatusCode());
+			assertTrue(response.hasBody());
+
+			Map health = response.getBody();
+
+			assertEquals("UP", health.get("status"));
+			assertTrue(health.containsKey("diskSpace"));
+		}
+
+		@Test
+		@SuppressWarnings("rawtypes")
+		public void testEnvEndpoint() throws Exception {
+			ResponseEntity<Map> response = this.restTemplate.getForEntity("http://localhost:" + port + "/env", Map.class);
+			assertEquals(HttpStatus.OK, response.getStatusCode());
+			assertTrue(response.hasBody());
+
+			Map env = response.getBody();
+
+			assertTrue(env.containsKey("server.ports"));
+
+			Map ports = (Map) env.get("server.ports");
+
+			assertEquals(this.port, ports.get("local.server.port"));
+		}
+
+	}
+
+
+	@TestPropertySource(properties = {"http.mappedRequestHeaders = *", "security.basic.enabled = true"})
+	public static class SecuredTests extends HttpSourceTests {
 
 		@Autowired
 		private SecurityProperties securityProperties;

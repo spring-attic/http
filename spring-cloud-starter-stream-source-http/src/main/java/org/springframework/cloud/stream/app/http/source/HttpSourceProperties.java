@@ -40,11 +40,6 @@ public class HttpSourceProperties {
 	 */
 	private String[] mappedRequestHeaders = { DefaultHttpHeaderMapper.HTTP_REQUEST_HEADER_NAME_PATTERN };
 
-	/**
-	 * Secure or not HTTP source path.
-	 */
-	private boolean secured;
-
 	@NotEmpty
 	public String getPathPattern() {
 		return pathPattern;
@@ -60,14 +55,6 @@ public class HttpSourceProperties {
 
 	public void setMappedRequestHeaders(String[] mappedRequestHeaders) {
 		this.mappedRequestHeaders = mappedRequestHeaders;
-	}
-
-	public boolean isSecured() {
-		return this.secured;
-	}
-
-	public void setSecured(boolean secured) {
-		this.secured = secured;
 	}
 
 }

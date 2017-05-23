@@ -196,7 +196,7 @@ public abstract class HttpSourceTests {
 	}
 
 
-	@TestPropertySource(properties = {"http.mappedRequestHeaders = *", "http.secured = true"})
+	@TestPropertySource(properties = {"http.mappedRequestHeaders = *", "security.basic.enabled = true"})
 	public static class SecuredTests extends HttpSourceTests {
 
 		@Autowired

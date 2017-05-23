@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.app.http.source;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -31,7 +33,10 @@ import org.springframework.integration.dsl.http.HttpRequestHandlerEndpointSpec;
 import org.springframework.integration.dsl.support.Consumer;
 import org.springframework.integration.expression.ValueExpression;
 import org.springframework.integration.http.inbound.HttpRequestHandlingEndpointSupport;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
  * A source module that listens for HTTP requests and emits the body as a message payload.
@@ -89,10 +94,28 @@ public class HttpSourceConfiguration {
 				.requestChannel(this.channels.output());
 	}
 
+	/**
+	 * The custom {@link WebSecurityConfigurerAdapter} to disable security in the application.
+	 * Since by default the security is enabled in Spring Boot, the condition for this configuration
+	 * is {@code matchIfMissing == true} to disable security by default.
+	 * @see org.springframework.boot.autoconfigure.security.SpringBootWebSecurityConfiguration.ApplicationNoWebSecurityConfigurerAdapter
+	 */
 	@Configuration
-	@ConditionalOnProperty(prefix = "http", name = "secured", havingValue = "false", matchIfMissing = true)
+	@ConditionalOnProperty(prefix = "security.basic", name = "enabled", havingValue = "false", matchIfMissing = true)
 	@EnableWebSecurity
-	protected static class DisableSecurityConfiguration {
+	protected static class DisableSecurityConfiguration extends WebSecurityConfigurerAdapter {
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			http.requestMatcher(new RequestMatcher() {
+
+				@Override
+				public boolean matches(HttpServletRequest request) {
+					return false;
+				}
+
+			});
+		}
 
 	}
 

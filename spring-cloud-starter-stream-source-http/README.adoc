@@ -38,7 +38,6 @@ $$server.port$$:: $$Server HTTP port.$$ *($$Integer$$, default: `$$<none>$$`)*
 NOTE: Security is disabled for this application by default.
 To enable it, you should use standard Spring Boot `security.basic.enabled = true` property.
 
-//end::ref-doc[]
 == Build
 
 ```
@@ -57,3 +56,4 @@ $ ./mvnw clean package
 java -jar http_source.jar
 ```
 
+//end::ref-doc[]

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package org.springframework.cloud.stream.app.http.source;
 
-import org.hibernate.validator.constraints.NotEmpty;
+import javax.validation.constraints.NotEmpty;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.integration.http.support.DefaultHttpHeaderMapper;
 import org.springframework.validation.annotation.Validated;
 
@@ -40,9 +41,20 @@ public class HttpSourceProperties {
 	 */
 	private String[] mappedRequestHeaders = { DefaultHttpHeaderMapper.HTTP_REQUEST_HEADER_NAME_PATTERN };
 
+	/**
+	 * The security enabling flag.
+	 */
+	private boolean enableSecurity;
+
+	/**
+	 * CORS properties.
+	 */
+	@NestedConfigurationProperty
+	private HttpSourceCorsProperties cors = new HttpSourceCorsProperties();
+
 	@NotEmpty
 	public String getPathPattern() {
-		return pathPattern;
+		return this.pathPattern;
 	}
 
 	public void setPathPattern(String pathPattern) {
@@ -50,11 +62,27 @@ public class HttpSourceProperties {
 	}
 
 	public String[] getMappedRequestHeaders() {
-		return mappedRequestHeaders;
+		return this.mappedRequestHeaders;
 	}
 
 	public void setMappedRequestHeaders(String[] mappedRequestHeaders) {
 		this.mappedRequestHeaders = mappedRequestHeaders;
+	}
+
+	public boolean isEnableSecurity() {
+		return this.enableSecurity;
+	}
+
+	public void setEnableSecurity(boolean enableSecurity) {
+		this.enableSecurity = enableSecurity;
+	}
+
+	public HttpSourceCorsProperties getCors() {
+		return this.cors;
+	}
+
+	public void setCors(HttpSourceCorsProperties cors) {
+		this.cors = cors;
 	}
 
 }

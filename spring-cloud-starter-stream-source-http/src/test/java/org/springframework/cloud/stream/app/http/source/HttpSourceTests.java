@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,12 +34,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
-import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.http.HttpHeaders;
@@ -82,19 +81,21 @@ public abstract class HttpSourceTests {
 		this.restTemplate = new TestRestTemplate();
 	}
 
-	@TestPropertySource(properties = "http.pathPattern=/foo")
+	@TestPropertySource(properties = "http.pathPattern = /foo")
 	public static class NonSecuredTests extends HttpSourceTests {
 
 		@Test
 		public void testText() {
-			ResponseEntity<?> entity = restTemplate.postForEntity("http://localhost:" + port + "/foo", "hello", Object.class);
+			ResponseEntity<?> entity =
+					this.restTemplate.postForEntity("http://localhost:" + port + "/foo", "hello", Object.class);
 			assertEquals(HttpStatus.ACCEPTED, entity.getStatusCode());
 			assertThat(messageCollector.forChannel(channels.output()), receivesPayloadThat(is("hello")));
 		}
 
 		@Test
 		public void testBytes() {
-			ResponseEntity<?> entity = restTemplate.postForEntity("http://localhost:" + port + "/foo", "hello".getBytes(), Object.class);
+			ResponseEntity<?> entity =
+					this.restTemplate.postForEntity("http://localhost:" + port + "/foo", "hello".getBytes(), Object.class);
 			assertEquals(HttpStatus.ACCEPTED, entity.getStatusCode());
 			assertThat(messageCollector.forChannel(channels.output()), receivesPayloadThat(is("hello".getBytes())));
 		}
@@ -105,7 +106,8 @@ public abstract class HttpSourceTests {
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON); // ends up as Content-Type in mapper
 			headers.set("foo", "bar");
-			RequestEntity<String> request = new RequestEntity<String>(json, headers, HttpMethod.POST, new URI("http://localhost:" + port + "/foo"));
+			RequestEntity<String> request =
+					new RequestEntity<>(json, headers, HttpMethod.POST, new URI("http://localhost:" + port + "/foo"));
 			ResponseEntity<?> response = restTemplate.exchange(request, Object.class);
 			assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
 			Message<?> message = messageCollector.forChannel(channels.output()).poll(1, TimeUnit.SECONDS);
@@ -120,7 +122,8 @@ public abstract class HttpSourceTests {
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON_UTF8); // ends up as content-type in mapper
 			headers.set("foo", "bar");
-			RequestEntity<String> request = new RequestEntity<String>(json, headers, HttpMethod.POST, new URI("http://localhost:" + port + "/foo"));
+			RequestEntity<String> request =
+					new RequestEntity<>(json, headers, HttpMethod.POST, new URI("http://localhost:" + port + "/foo"));
 			ResponseEntity<?> response = restTemplate.exchange(request, Object.class);
 			assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
 			Message<?> message = messageCollector.forChannel(channels.output()).poll(1, TimeUnit.SECONDS);
@@ -131,72 +134,67 @@ public abstract class HttpSourceTests {
 
 		@Test
 		@SuppressWarnings("rawtypes")
-		public void testHealthEndpoint() throws Exception {
-			ResponseEntity<Map> response = this.restTemplate.getForEntity("http://localhost:" + port + "/health", Map.class);
+		public void testHealthEndpoint() {
+			ResponseEntity<Map> response =
+					this.restTemplate.getForEntity("http://localhost:" + port + "/actuator/health", Map.class);
 			assertEquals(HttpStatus.OK, response.getStatusCode());
 			assertTrue(response.hasBody());
 
 			Map health = response.getBody();
 
 			assertEquals("UP", health.get("status"));
-			assertFalse(health.containsKey("diskSpace"));
 		}
 
 		@Test
 		@SuppressWarnings("rawtypes")
-		public void testEnvEndpoint() throws Exception {
-			ResponseEntity<Map> response = this.restTemplate.getForEntity("http://localhost:" + port + "/env", Map.class);
-			assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-			assertTrue(response.hasBody());
-			assertEquals("Full authentication is required to access this resource", response.getBody().get("message"));
+		public void testEnvEndpoint() {
+			ResponseEntity<Map> response =
+					this.restTemplate.getForEntity("http://localhost:" + port + "/actuator/env", Map.class);
+			assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
 		}
 
 	}
 
 
-	@TestPropertySource(properties = "management.security.enabled=false")
+	@TestPropertySource(properties = "management.endpoints.web.expose = *")
 	public static class NonSecuredManagementDisabledTests extends HttpSourceTests {
 
 		@Test
 		public void testText() {
-			ResponseEntity<?> entity = restTemplate.postForEntity("http://localhost:" + port, "hello", Object.class);
+			ResponseEntity<?> entity = this.restTemplate.postForEntity("http://localhost:" + port, "hello", Object.class);
 			assertEquals(HttpStatus.ACCEPTED, entity.getStatusCode());
 			assertThat(messageCollector.forChannel(channels.output()), receivesPayloadThat(is("hello")));
 		}
 
 		@Test
 		@SuppressWarnings("rawtypes")
-		public void testHealthEndpoint() throws Exception {
-			ResponseEntity<Map> response = this.restTemplate.getForEntity("http://localhost:" + port + "/health", Map.class);
+		public void testHealthEndpoint() {
+			ResponseEntity<Map> response =
+					this.restTemplate.getForEntity("http://localhost:" + port + "/actuator/health", Map.class);
 			assertEquals(HttpStatus.OK, response.getStatusCode());
 			assertTrue(response.hasBody());
 
 			Map health = response.getBody();
 
 			assertEquals("UP", health.get("status"));
-			assertTrue(health.containsKey("diskSpace"));
 		}
 
 		@Test
-		@SuppressWarnings("rawtypes")
-		public void testEnvEndpoint() throws Exception {
-			ResponseEntity<Map> response = this.restTemplate.getForEntity("http://localhost:" + port + "/env", Map.class);
+		public void testEnvEndpoint() {
+			ResponseEntity<Object> response =
+					this.restTemplate.getForEntity("http://localhost:" + port + "/actuator/env", Object.class);
 			assertEquals(HttpStatus.OK, response.getStatusCode());
 			assertTrue(response.hasBody());
-
-			Map env = response.getBody();
-
-			assertTrue(env.containsKey("server.ports"));
-
-			Map ports = (Map) env.get("server.ports");
-
-			assertEquals(this.port, ports.get("local.server.port"));
 		}
 
 	}
 
 
-	@TestPropertySource(properties = {"http.mappedRequestHeaders = *", "security.basic.enabled = true"})
+	@TestPropertySource(properties = {
+			"http.mappedRequestHeaders = *",
+			"http.enableSecurity = true",
+			"http.cors.allowedOrigins = /bar",
+	})
 	public static class SecuredTests extends HttpSourceTests {
 
 		@Autowired
@@ -206,58 +204,53 @@ public abstract class HttpSourceTests {
 		@Before
 		public void setup() {
 			this.restTemplate = new TestRestTemplate(this.securityProperties.getUser().getName(),
-				this.securityProperties.getUser().getPassword());
+					this.securityProperties.getUser().getPassword());
 		}
 
 		@Test
 		public void testText() throws Exception {
 			HttpHeaders headers = new HttpHeaders();
 			headers.set("foo", "bar");
-			RequestEntity<String> request = new RequestEntity<String>("hello", headers, HttpMethod.POST, new URI("http://localhost:" + port));
-			ResponseEntity<?> response = restTemplate.exchange(request, Object.class);
+			headers.set(HttpHeaders.ORIGIN, "/bar");
+			RequestEntity<String> request =
+					new RequestEntity<>("hello", headers, HttpMethod.POST, new URI("http://localhost:" + this.port));
+			ResponseEntity<?> response = this.restTemplate.exchange(request, Object.class);
 			assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
 			Message<?> message = messageCollector.forChannel(channels.output()).poll(1, TimeUnit.SECONDS);
 			assertThat(message, hasPayload("hello"));
 			assertThat(message, hasHeader("foo", "bar"));
+
+			headers.set(HttpHeaders.ORIGIN, "/junk");
+			request = new RequestEntity<>("junk", headers, HttpMethod.POST, new URI("http://localhost:" + this.port));
+			response = this.restTemplate.exchange(request, String.class);
+			assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+			assertEquals("Invalid CORS request", response.getBody());
 		}
 
 		@Test
 		@SuppressWarnings("rawtypes")
-		public void testHealthEndpoint() throws Exception {
-			ResponseEntity<Map> response = this.restTemplate.getForEntity("http://localhost:" + port + "/health", Map.class);
+		public void testHealthEndpoint() {
+			ResponseEntity<Map> response =
+					this.restTemplate.getForEntity("http://localhost:" + port + "/actuator/health", Map.class);
 			assertEquals(HttpStatus.OK, response.getStatusCode());
 			assertTrue(response.hasBody());
 
 			Map health = response.getBody();
 
 			assertEquals("UP", health.get("status"));
-			assertTrue(health.containsKey("diskSpace"));
 		}
 
 		@Test
-		@SuppressWarnings("rawtypes")
-		public void testEnvEndpoint() throws Exception {
-			ResponseEntity<Map> response = this.restTemplate.getForEntity("http://localhost:" + port + "/env", Map.class);
-			assertEquals(HttpStatus.OK, response.getStatusCode());
-			assertTrue(response.hasBody());
-
-			Map env = response.getBody();
-
-			assertTrue(env.containsKey("server.ports"));
-
-			Map ports = (Map) env.get("server.ports");
-
-			assertEquals(this.port, ports.get("local.server.port"));
+		public void testEnvEndpoint() {
+			ResponseEntity<Object> response =
+					this.restTemplate.getForEntity("http://localhost:" + port + "/actuator/env", Object.class);
+			assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
 		}
 
 	}
 
 	@SpringBootApplication
 	static class HttpSourceApplication {
-
-		public static void main(String[] args) {
-			SpringApplication.run(HttpSourceApplication.class, args);
-		}
 
 	}
 

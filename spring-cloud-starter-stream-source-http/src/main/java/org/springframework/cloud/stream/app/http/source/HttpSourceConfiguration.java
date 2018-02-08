@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.app.http.source;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -27,16 +25,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.integration.dsl.http.BaseHttpInboundEndpointSpec;
-import org.springframework.integration.dsl.http.Http;
-import org.springframework.integration.dsl.http.HttpRequestHandlerEndpointSpec;
-import org.springframework.integration.dsl.support.Consumer;
 import org.springframework.integration.expression.ValueExpression;
+import org.springframework.integration.http.dsl.Http;
+import org.springframework.integration.http.dsl.HttpRequestHandlerEndpointSpec;
 import org.springframework.integration.http.inbound.HttpRequestHandlingEndpointSupport;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
  * A source module that listens for HTTP requests and emits the body as a message payload.
@@ -73,24 +67,16 @@ public class HttpSourceConfiguration {
 	}
 
 	private HttpRequestHandlerEndpointSpec buildHttpRequestHandlerEndpointSpec(final String... consumes) {
-		// TODO Until SI Java DSL 1.2.2. Use mappedRequestHeaders() instead
-		DefaultMixedCaseContentTypeHttpHeaderMapper defaultHttpHeaderMapper =
-				DefaultMixedCaseContentTypeHttpHeaderMapper.inboundMapper();
-		defaultHttpHeaderMapper.setInboundHeaderNames(this.properties.getMappedRequestHeaders());
-
 		return Http.inboundChannelAdapter(this.properties.getPathPattern())
-				.headerMapper(defaultHttpHeaderMapper)
-//				.mappedRequestHeaders(this.properties.getMappedRequestHeaders())
+				.mappedRequestHeaders(this.properties.getMappedRequestHeaders())
 				.statusCodeExpression(new ValueExpression<>(HttpStatus.ACCEPTED))
-				.requestMapping(new Consumer<BaseHttpInboundEndpointSpec.RequestMappingSpec>() {
-
-					@Override
-					public void accept(BaseHttpInboundEndpointSpec.RequestMappingSpec requestMappingSpec) {
-						requestMappingSpec.methods(HttpMethod.POST)
-								.consumes(consumes);
-					}
-
-				})
+				.requestMapping(requestMapping ->
+						requestMapping.methods(HttpMethod.POST)
+								.consumes(consumes))
+				.crossOrigin(crossOrigin ->
+						crossOrigin.origin(this.properties.getCors().getAllowedOrigins())
+								.allowedHeaders(this.properties.getCors().getAllowedHeaders())
+								.allowCredentials(this.properties.getCors().getAllowCredentials()))
 				.requestChannel(this.channels.output());
 	}
 
@@ -98,23 +84,15 @@ public class HttpSourceConfiguration {
 	 * The custom {@link WebSecurityConfigurerAdapter} to disable security in the application.
 	 * Since by default the security is enabled in Spring Boot, the condition for this configuration
 	 * is {@code matchIfMissing == true} to disable security by default.
-	 * @see org.springframework.boot.autoconfigure.security.SpringBootWebSecurityConfiguration.ApplicationNoWebSecurityConfigurerAdapter
+	 * @see org.springframework.boot.autoconfigure.security.servlet.SpringBootWebSecurityConfiguration
 	 */
 	@Configuration
-	@ConditionalOnProperty(prefix = "security.basic", name = "enabled", havingValue = "false", matchIfMissing = true)
-	@EnableWebSecurity
+	@ConditionalOnProperty(prefix = "http", name = "enableSecurity", havingValue = "false", matchIfMissing = true)
 	protected static class DisableSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
 		@Override
-		protected void configure(HttpSecurity http) throws Exception {
-			http.requestMatcher(new RequestMatcher() {
-
-				@Override
-				public boolean matches(HttpServletRequest request) {
-					return false;
-				}
-
-			});
+		protected void configure(HttpSecurity http) {
+			http.requestMatcher(request -> false);
 		}
 
 	}

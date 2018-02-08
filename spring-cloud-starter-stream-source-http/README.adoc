@@ -7,7 +7,7 @@ otherwise the payload will be a byte array.
 
 == Input
 
-N/A 
+N/A
 
 == Output
 
@@ -17,11 +17,11 @@ N/A
 
 ==== Payload:
 
-If content type matches `text/*` or `application/json` 
+If content type matches `text/*` or `application/json`
 
 * `String`
 
-If content type does not match `text/*` or `application/json` 
+If content type does not match `text/*` or `application/json`
 
 * `byte array`
 
@@ -30,13 +30,17 @@ If content type does not match `text/*` or `application/json`
 The **$$http$$** $$source$$ supports the following configuration properties:
 
 //tag::configuration-properties[]
+$$http.cors.allow-credentials$$:: $$Whether the browser should include any cookies associated with the domain of the request being annotated.$$ *($$Boolean$$, default: `$$<none>$$`)*
+$$http.cors.allowed-headers$$:: $$List of request headers that can be used during the actual request.$$ *($$String[]$$, default: `$$<none>$$`)*
+$$http.cors.allowed-origins$$:: $$List of allowed origins, e.g. "http://domain1.com".$$ *($$String[]$$, default: `$$<none>$$`)*
+$$http.enable-security$$:: $$The security enabling flag.$$ *($$Boolean$$, default: `$$false$$`)*
 $$http.mapped-request-headers$$:: $$Headers that will be mapped.$$ *($$String[]$$, default: `$$<none>$$`)*
 $$http.path-pattern$$:: $$An Ant-Style pattern to determine which http requests will be captured.$$ *($$String$$, default: `$$/$$`)*
 $$server.port$$:: $$Server HTTP port.$$ *($$Integer$$, default: `$$<none>$$`)*
 //end::configuration-properties[]
 
 NOTE: Security is disabled for this application by default.
-To enable it, you should use standard Spring Boot `security.basic.enabled = true` property.
+To enable it, you should use the mentioned above `http.enable-security = true` property.
 
 == Build
 

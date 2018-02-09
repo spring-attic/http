@@ -7,7 +7,7 @@ otherwise the payload will be a byte array.
 
 == Input
 
-N/A 
+N/A
 
 == Output
 
@@ -17,11 +17,11 @@ N/A
 
 ==== Payload:
 
-If content type matches `text/*` or `application/json` 
+If content type matches `text/*` or `application/json`
 
 * `String`
 
-If content type does not match `text/*` or `application/json` 
+If content type does not match `text/*` or `application/json`
 
 * `byte array`
 
@@ -40,7 +40,7 @@ $$server.port$$:: $$Server HTTP port.$$ *($$Integer$$, default: `$$<none>$$`)*
 //end::configuration-properties[]
 
 NOTE: Security is disabled for this application by default.
-To enable it, you should use standard Spring Boot `security.basic.enabled = true` property.
+To enable it, you should use the mentioned above `http.enable-security = true` property.
 
 == Build
 

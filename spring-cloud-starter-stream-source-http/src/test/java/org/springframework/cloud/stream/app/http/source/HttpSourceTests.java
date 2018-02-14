@@ -156,7 +156,7 @@ public abstract class HttpSourceTests {
 	}
 
 
-	@TestPropertySource(properties = "management.endpoints.web.expose = *")
+	@TestPropertySource(properties = "management.endpoints.web.exposure.include = *")
 	public static class NonSecuredManagementDisabledTests extends HttpSourceTests {
 
 		@Test

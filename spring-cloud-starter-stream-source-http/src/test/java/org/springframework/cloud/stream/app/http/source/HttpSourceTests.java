@@ -70,7 +70,7 @@ public abstract class HttpSourceTests {
 
 	@LocalServerPort
 	protected int port;
-	HttpSourceConfiguration.
+
 	@Autowired
 	protected MessageCollector messageCollector;
 

@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.app.http.source;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -93,6 +94,26 @@ public class HttpSourceConfiguration {
 		@Override
 		protected void configure(HttpSecurity http) {
 			http.requestMatcher(request -> false);
+		}
+
+	}
+
+	/**
+	 * The custom {@link WebSecurityConfigurerAdapter} to disable CSRF protection in the application.
+	 * Since by default the CSRF protection is enabled in Spring Boot, the condition for this configuration
+	 * is {@code matchIfMissing == true} to disable CSRF protection by default.
+	 * @see DisableSecurityConfiguration
+	 * @see org.springframework.boot.autoconfigure.security.servlet.SpringBootWebSecurityConfiguration
+	 */
+	@Configuration
+	@ConditionalOnMissingBean(DisableSecurityConfiguration.class)
+	@ConditionalOnProperty(prefix = "http", name = "enableCsrf", havingValue = "false", matchIfMissing = true)
+	protected static class DisableCsrfProtectionConfiguration extends WebSecurityConfigurerAdapter {
+
+		@Override
+		protected void configure(HttpSecurity http) throws Exception {
+			super.configure(http);
+			http.csrf().disable();
 		}
 
 	}

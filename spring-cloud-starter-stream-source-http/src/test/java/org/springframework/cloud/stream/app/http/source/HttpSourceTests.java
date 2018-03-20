@@ -70,7 +70,7 @@ public abstract class HttpSourceTests {
 
 	@LocalServerPort
 	protected int port;
-
+	HttpSourceConfiguration.
 	@Autowired
 	protected MessageCollector messageCollector;
 
@@ -193,7 +193,7 @@ public abstract class HttpSourceTests {
 	@TestPropertySource(properties = {
 			"http.mappedRequestHeaders = *",
 			"http.enableSecurity = true",
-			"http.cors.allowedOrigins = /bar",
+			"http.cors.allowedOrigins = /bar"
 	})
 	public static class SecuredTests extends HttpSourceTests {
 
@@ -248,6 +248,34 @@ public abstract class HttpSourceTests {
 		}
 
 	}
+
+	@TestPropertySource(properties = {
+			"http.mappedRequestHeaders = *",
+			"http.enableSecurity = true",
+			"http.enableCsrf = true"
+	})
+	public static class CsrfEnabledTests extends HttpSourceTests {
+
+		@Autowired
+		private SecurityProperties securityProperties;
+
+		@Override
+		@Before
+		public void setup() {
+			this.restTemplate = new TestRestTemplate(this.securityProperties.getUser().getName(),
+					this.securityProperties.getUser().getPassword());
+		}
+
+		@Test
+		public void testText() throws Exception {
+			RequestEntity<String> request =
+					new RequestEntity<>("hello", new HttpHeaders(), HttpMethod.POST, new URI("http://localhost:" + this.port));
+			ResponseEntity<?> response = this.restTemplate.exchange(request, Object.class);
+			assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+		}
+
+	}
+
 
 	@SpringBootApplication
 	static class HttpSourceApplication {

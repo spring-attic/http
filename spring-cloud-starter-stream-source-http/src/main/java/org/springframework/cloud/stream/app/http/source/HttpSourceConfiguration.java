@@ -82,38 +82,32 @@ public class HttpSourceConfiguration {
 	}
 
 	/**
-	 * The custom {@link WebSecurityConfigurerAdapter} to disable security in the application.
-	 * Since by default the security is enabled in Spring Boot, the condition for this configuration
-	 * is {@code matchIfMissing == true} to disable security by default.
+	 * The custom {@link WebSecurityConfigurerAdapter} to disable security in the application
+	 * if {@code http.enableSecurity = false} (default).
+	 * When {@code http.enableSecurity = true} and {@code http.enableCsrf = false} (default),
+	 * the CSRF protection is disabled in the application.
+	 * If both options are {@code true}, then this configuration falls back to the default
+	 * Spring Security configuration.
 	 * @see org.springframework.boot.autoconfigure.security.servlet.SpringBootWebSecurityConfiguration
 	 */
 	@Configuration
-	@ConditionalOnProperty(prefix = "http", name = "enableSecurity", havingValue = "false", matchIfMissing = true)
-	protected static class DisableSecurityConfiguration extends WebSecurityConfigurerAdapter {
+	protected static class HttpSourceSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
-		@Override
-		protected void configure(HttpSecurity http) {
-			http.requestMatcher(request -> false);
-		}
-
-	}
-
-	/**
-	 * The custom {@link WebSecurityConfigurerAdapter} to disable CSRF protection in the application.
-	 * Since by default the CSRF protection is enabled in Spring Boot, the condition for this configuration
-	 * is {@code matchIfMissing == true} to disable CSRF protection by default.
-	 * @see DisableSecurityConfiguration
-	 * @see org.springframework.boot.autoconfigure.security.servlet.SpringBootWebSecurityConfiguration
-	 */
-	@Configuration
-	@ConditionalOnMissingBean(DisableSecurityConfiguration.class)
-	@ConditionalOnProperty(prefix = "http", name = "enableCsrf", havingValue = "false", matchIfMissing = true)
-	protected static class DisableCsrfProtectionConfiguration extends WebSecurityConfigurerAdapter {
+		@Autowired
+		private HttpSourceProperties properties;
 
 		@Override
 		protected void configure(HttpSecurity http) throws Exception {
-			super.configure(http);
-			http.csrf().disable();
+			if (!this.properties.isEnableSecurity()) {
+				http.requestMatcher(request -> false);
+			}
+			else if (!this.properties.isEnableCsrf()) {
+				super.configure(http);
+				http.csrf().disable();
+			}
+			else {
+				super.configure(http);
+			}
 		}
 
 	}

@@ -42,6 +42,8 @@ $$server.port$$:: $$Server HTTP port.$$ *($$Integer$$, default: `$$8080$$`)*
 
 NOTE: Security is disabled for this application by default.
 To enable it, you should use the mentioned above `http.enable-security = true` property.
+Also you must override the default `spring.autoconfigure.exclude` property by setting it to void (e.g. `--spring.autoconfigure.exclude=`)
+
 
 == Build
 
@@ -58,7 +60,7 @@ $ ./mvnw clean package
 == Examples
 
 ```
-java -jar http_source.jar
+java -jar http_source.jar --spring.autoconfigure.exclude=
 ```
 
 //end::ref-doc[]

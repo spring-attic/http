@@ -31,6 +31,7 @@ import org.springframework.integration.http.dsl.Http;
 import org.springframework.integration.http.dsl.HttpRequestHandlerEndpointSpec;
 import org.springframework.integration.http.inbound.HttpRequestHandlingEndpointSupport;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
 /**
@@ -91,6 +92,7 @@ public class HttpSourceConfiguration {
 	 * @see org.springframework.boot.autoconfigure.security.servlet.SpringBootWebSecurityConfiguration
 	 */
 	@Configuration
+	@EnableWebSecurity
 	protected static class HttpSourceSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
 		@Autowired

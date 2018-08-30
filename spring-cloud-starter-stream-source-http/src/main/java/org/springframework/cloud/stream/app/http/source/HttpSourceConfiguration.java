@@ -17,13 +17,13 @@
 package org.springframework.cloud.stream.app.http.source;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.integration.expression.ValueExpression;
@@ -43,6 +43,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
  * @author Marius Bogoevici
  * @author Artem Bilan
  * @author Gary Russell
+ * @author Christian Tzolov
  */
 @EnableBinding(Source.class)
 @EnableConfigurationProperties(HttpSourceProperties.class)
@@ -79,6 +80,15 @@ public class HttpSourceConfiguration {
 								.allowedHeaders(this.properties.getCors().getAllowedHeaders())
 								.allowCredentials(this.properties.getCors().getAllowCredentials()))
 				.requestChannel(this.channels.output());
+	}
+
+	/**
+	 * Re-include the SecurityAutoConfiguration to ensure that HttpSourceSecurityConfiguration works even in case when
+	 * the SecurityAutoConfiguration is excluded.
+	 */
+	@Configuration
+	@Import(SecurityAutoConfiguration.class)
+	protected static class IncludeSecurityAutoConfiguration {
 	}
 
 	/**

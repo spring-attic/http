@@ -16,15 +16,6 @@
 
 package org.springframework.cloud.stream.app.http.source;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.cloud.stream.test.matcher.MessageQueueMatcher.receivesPayloadThat;
-import static org.springframework.integration.test.matcher.HeaderMatcher.hasHeader;
-import static org.springframework.integration.test.matcher.PayloadMatcher.hasPayload;
-
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +43,15 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.springframework.cloud.stream.test.matcher.MessageQueueMatcher.receivesPayloadThat;
+import static org.springframework.integration.test.matcher.HeaderMatcher.hasHeader;
+import static org.springframework.integration.test.matcher.PayloadMatcher.hasPayload;
+
 /**
  * Tests for HttpSourceConfiguration.
  *
@@ -60,9 +60,12 @@ import org.springframework.test.context.junit4.SpringRunner;
  * @author Marius Bogoevici
  * @author Artem Bilan
  * @author Gary Russell
+ * @author Christian Tzolov
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = {
+		"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration" })
 public abstract class HttpSourceTests {
 
 	@Autowired

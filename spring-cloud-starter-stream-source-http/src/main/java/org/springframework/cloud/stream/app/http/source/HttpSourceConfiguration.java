@@ -17,21 +17,17 @@
 package org.springframework.cloud.stream.app.http.source;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.app.security.common.SecurityCommonAutoConfigurationProperties;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.integration.expression.ValueExpression;
 import org.springframework.integration.http.dsl.Http;
 import org.springframework.integration.http.dsl.HttpRequestHandlerEndpointSpec;
 import org.springframework.integration.http.inbound.HttpRequestHandlingEndpointSupport;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
 /**
  * A source module that listens for HTTP requests and emits the body as a message payload.
@@ -46,7 +42,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
  * @author Christian Tzolov
  */
 @EnableBinding(Source.class)
-@EnableConfigurationProperties(HttpSourceProperties.class)
+@EnableConfigurationProperties({ HttpSourceProperties.class, SecurityCommonAutoConfigurationProperties.class })
 public class HttpSourceConfiguration {
 
 	@Autowired
@@ -81,45 +77,4 @@ public class HttpSourceConfiguration {
 								.allowCredentials(this.properties.getCors().getAllowCredentials()))
 				.requestChannel(this.channels.output());
 	}
-
-	/**
-	 * Re-include the SecurityAutoConfiguration to ensure that HttpSourceSecurityConfiguration works even in case when
-	 * the SecurityAutoConfiguration is excluded.
-	 */
-	@Configuration
-	@Import(SecurityAutoConfiguration.class)
-	protected static class IncludeSecurityAutoConfiguration {
-	}
-
-	/**
-	 * The custom {@link WebSecurityConfigurerAdapter} to disable security in the application
-	 * if {@code http.enableSecurity = false} (default).
-	 * When {@code http.enableSecurity = true} and {@code http.enableCsrf = false} (default),
-	 * the CSRF protection is disabled in the application.
-	 * If both options are {@code true}, then this configuration falls back to the default
-	 * Spring Security configuration.
-	 * @see org.springframework.boot.autoconfigure.security.servlet.SpringBootWebSecurityConfiguration
-	 */
-	@Configuration
-	protected static class HttpSourceSecurityConfiguration extends WebSecurityConfigurerAdapter {
-
-		@Autowired
-		private HttpSourceProperties properties;
-
-		@Override
-		protected void configure(HttpSecurity http) throws Exception {
-			if (!this.properties.isEnableSecurity()) {
-				http.requestMatcher(request -> false);
-			}
-			else if (!this.properties.isEnableCsrf()) {
-				super.configure(http);
-				http.csrf().disable();
-			}
-			else {
-				super.configure(http);
-			}
-		}
-
-	}
-
 }

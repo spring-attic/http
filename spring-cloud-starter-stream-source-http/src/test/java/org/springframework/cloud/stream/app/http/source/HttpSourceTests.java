@@ -29,7 +29,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.http.HttpHeaders;
@@ -38,6 +37,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.support.BasicAuthenticationInterceptor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.TestPropertySource;
@@ -64,41 +64,32 @@ import static org.springframework.integration.test.matcher.PayloadMatcher.hasPay
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = {
-		"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration" })
 public abstract class HttpSourceTests {
 
 	@Autowired
 	protected Source channels;
 
-	@LocalServerPort
-	protected int port;
-
 	@Autowired
 	protected MessageCollector messageCollector;
 
+	@Autowired
 	protected TestRestTemplate restTemplate;
 
-	@Before
-	public void setup() {
-		this.restTemplate = new TestRestTemplate();
-	}
-
-	@TestPropertySource(properties = "http.pathPattern = /foo")
+	@TestPropertySource(properties = {
+			"http.pathPattern = /foo",
+			"spring.cloud.stream.security.enabled=false" })
 	public static class NonSecuredTests extends HttpSourceTests {
 
 		@Test
 		public void testText() {
-			ResponseEntity<?> entity =
-					this.restTemplate.postForEntity("http://localhost:" + port + "/foo", "hello", Object.class);
+			ResponseEntity<?> entity = this.restTemplate.postForEntity("/foo", "hello", Object.class);
 			assertEquals(HttpStatus.ACCEPTED, entity.getStatusCode());
 			assertThat(messageCollector.forChannel(channels.output()), receivesPayloadThat(is("hello")));
 		}
 
 		@Test
 		public void testBytes() {
-			ResponseEntity<?> entity =
-					this.restTemplate.postForEntity("http://localhost:" + port + "/foo", "hello".getBytes(), Object.class);
+			ResponseEntity<?> entity = this.restTemplate.postForEntity("/foo", "hello".getBytes(), Object.class);
 			assertEquals(HttpStatus.ACCEPTED, entity.getStatusCode());
 			assertThat(messageCollector.forChannel(channels.output()), receivesPayloadThat(is("hello".getBytes())));
 		}
@@ -109,8 +100,7 @@ public abstract class HttpSourceTests {
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON); // ends up as Content-Type in mapper
 			headers.set("foo", "bar");
-			RequestEntity<String> request =
-					new RequestEntity<>(json, headers, HttpMethod.POST, new URI("http://localhost:" + port + "/foo"));
+			RequestEntity<String> request = new RequestEntity<>(json, headers, HttpMethod.POST, new URI("/foo"));
 			ResponseEntity<?> response = restTemplate.exchange(request, Object.class);
 			assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
 			Message<?> message = messageCollector.forChannel(channels.output()).poll(1, TimeUnit.SECONDS);
@@ -125,8 +115,7 @@ public abstract class HttpSourceTests {
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON_UTF8); // ends up as content-type in mapper
 			headers.set("foo", "bar");
-			RequestEntity<String> request =
-					new RequestEntity<>(json, headers, HttpMethod.POST, new URI("http://localhost:" + port + "/foo"));
+			RequestEntity<String> request = new RequestEntity<>(json, headers, HttpMethod.POST, new URI("/foo"));
 			ResponseEntity<?> response = restTemplate.exchange(request, Object.class);
 			assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
 			Message<?> message = messageCollector.forChannel(channels.output()).poll(1, TimeUnit.SECONDS);
@@ -138,8 +127,7 @@ public abstract class HttpSourceTests {
 		@Test
 		@SuppressWarnings("rawtypes")
 		public void testHealthEndpoint() {
-			ResponseEntity<Map> response =
-					this.restTemplate.getForEntity("http://localhost:" + port + "/actuator/health", Map.class);
+			ResponseEntity<Map> response = this.restTemplate.getForEntity("/actuator/health", Map.class);
 			assertEquals(HttpStatus.OK, response.getStatusCode());
 			assertTrue(response.hasBody());
 
@@ -151,8 +139,7 @@ public abstract class HttpSourceTests {
 		@Test
 		@SuppressWarnings("rawtypes")
 		public void testEnvEndpoint() {
-			ResponseEntity<Map> response =
-					this.restTemplate.getForEntity("http://localhost:" + port + "/actuator/env", Map.class);
+			ResponseEntity<Map> response = this.restTemplate.getForEntity("/actuator/env", Map.class);
 			assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
 		}
 
@@ -164,7 +151,7 @@ public abstract class HttpSourceTests {
 
 		@Test
 		public void testText() {
-			ResponseEntity<?> entity = this.restTemplate.postForEntity("http://localhost:" + port, "hello", Object.class);
+			ResponseEntity<?> entity = this.restTemplate.postForEntity("/", "hello", Object.class);
 			assertEquals(HttpStatus.ACCEPTED, entity.getStatusCode());
 			assertThat(messageCollector.forChannel(channels.output()), receivesPayloadThat(is("hello")));
 		}
@@ -172,8 +159,7 @@ public abstract class HttpSourceTests {
 		@Test
 		@SuppressWarnings("rawtypes")
 		public void testHealthEndpoint() {
-			ResponseEntity<Map> response =
-					this.restTemplate.getForEntity("http://localhost:" + port + "/actuator/health", Map.class);
+			ResponseEntity<Map> response = this.restTemplate.getForEntity("/actuator/health", Map.class);
 			assertEquals(HttpStatus.OK, response.getStatusCode());
 			assertTrue(response.hasBody());
 
@@ -184,8 +170,7 @@ public abstract class HttpSourceTests {
 
 		@Test
 		public void testEnvEndpoint() {
-			ResponseEntity<Object> response =
-					this.restTemplate.getForEntity("http://localhost:" + port + "/actuator/env", Object.class);
+			ResponseEntity<Object> response = this.restTemplate.getForEntity("/actuator/env", Object.class);
 			assertEquals(HttpStatus.OK, response.getStatusCode());
 			assertTrue(response.hasBody());
 		}
@@ -195,7 +180,8 @@ public abstract class HttpSourceTests {
 
 	@TestPropertySource(properties = {
 			"http.mappedRequestHeaders = *",
-			"http.enableSecurity = true",
+			"spring.cloud.stream.security.enabled = true",
+			"spring.cloud.stream.security.csrf-enabled=false",
 			"http.cors.allowedOrigins = /bar"
 	})
 	public static class SecuredTests extends HttpSourceTests {
@@ -203,11 +189,10 @@ public abstract class HttpSourceTests {
 		@Autowired
 		private SecurityProperties securityProperties;
 
-		@Override
 		@Before
 		public void setup() {
-			this.restTemplate = new TestRestTemplate(this.securityProperties.getUser().getName(),
-					this.securityProperties.getUser().getPassword());
+			this.restTemplate.getRestTemplate().getInterceptors().add(new BasicAuthenticationInterceptor(
+					securityProperties.getUser().getName(), securityProperties.getUser().getPassword()));
 		}
 
 		@Test
@@ -215,8 +200,7 @@ public abstract class HttpSourceTests {
 			HttpHeaders headers = new HttpHeaders();
 			headers.set("foo", "bar");
 			headers.set(HttpHeaders.ORIGIN, "/bar");
-			RequestEntity<String> request =
-					new RequestEntity<>("hello", headers, HttpMethod.POST, new URI("http://localhost:" + this.port));
+			RequestEntity<String> request = new RequestEntity<>("hello", headers, HttpMethod.POST, new URI("/"));
 			ResponseEntity<?> response = this.restTemplate.exchange(request, Object.class);
 			assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
 			Message<?> message = messageCollector.forChannel(channels.output()).poll(1, TimeUnit.SECONDS);
@@ -224,7 +208,7 @@ public abstract class HttpSourceTests {
 			assertThat(message, hasHeader("foo", "bar"));
 
 			headers.set(HttpHeaders.ORIGIN, "/junk");
-			request = new RequestEntity<>("junk", headers, HttpMethod.POST, new URI("http://localhost:" + this.port));
+			request = new RequestEntity<>("junk", headers, HttpMethod.POST, new URI("/"));
 			response = this.restTemplate.exchange(request, String.class);
 			assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
 			assertEquals("Invalid CORS request", response.getBody());
@@ -233,8 +217,7 @@ public abstract class HttpSourceTests {
 		@Test
 		@SuppressWarnings("rawtypes")
 		public void testHealthEndpoint() {
-			ResponseEntity<Map> response =
-					this.restTemplate.getForEntity("http://localhost:" + port + "/actuator/health", Map.class);
+			ResponseEntity<Map> response = this.restTemplate.getForEntity("/actuator/health", Map.class);
 			assertEquals(HttpStatus.OK, response.getStatusCode());
 			assertTrue(response.hasBody());
 
@@ -245,8 +228,7 @@ public abstract class HttpSourceTests {
 
 		@Test
 		public void testEnvEndpoint() {
-			ResponseEntity<Object> response =
-					this.restTemplate.getForEntity("http://localhost:" + port + "/actuator/env", Object.class);
+			ResponseEntity<Object> response = this.restTemplate.getForEntity("/actuator/env", Object.class);
 			assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
 		}
 
@@ -254,31 +236,29 @@ public abstract class HttpSourceTests {
 
 	@TestPropertySource(properties = {
 			"http.mappedRequestHeaders = *",
-			"http.enableSecurity = true",
-			"http.enableCsrf = true"
+			"spring.cloud.stream.security.enabled = true",
+			"spring.cloud.stream.security.csrf-enabled=true"
 	})
 	public static class CsrfEnabledTests extends HttpSourceTests {
 
 		@Autowired
 		private SecurityProperties securityProperties;
 
-		@Override
 		@Before
 		public void setup() {
-			this.restTemplate = new TestRestTemplate(this.securityProperties.getUser().getName(),
-					this.securityProperties.getUser().getPassword());
+			this.restTemplate.getRestTemplate().getInterceptors().add(new BasicAuthenticationInterceptor(
+					securityProperties.getUser().getName(), securityProperties.getUser().getPassword()));
 		}
 
 		@Test
 		public void testText() throws Exception {
 			RequestEntity<String> request =
-					new RequestEntity<>("hello", new HttpHeaders(), HttpMethod.POST, new URI("http://localhost:" + this.port));
+					new RequestEntity<>("hello", new HttpHeaders(), HttpMethod.POST, new URI("/"));
 			ResponseEntity<?> response = this.restTemplate.exchange(request, Object.class);
 			assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
 		}
 
 	}
-
 
 	@SpringBootApplication
 	static class HttpSourceApplication {

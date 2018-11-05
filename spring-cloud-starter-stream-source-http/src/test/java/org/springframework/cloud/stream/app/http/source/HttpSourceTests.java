@@ -76,8 +76,7 @@ public abstract class HttpSourceTests {
 	protected TestRestTemplate restTemplate;
 
 	@TestPropertySource(properties = {
-			"http.pathPattern = /foo",
-			"spring.cloud.stream.security.enabled=false" })
+			"http.pathPattern = /foo"})
 	public static class NonSecuredTests extends HttpSourceTests {
 
 		@Test

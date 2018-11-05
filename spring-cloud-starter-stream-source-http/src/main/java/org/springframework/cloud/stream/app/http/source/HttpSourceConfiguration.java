@@ -42,7 +42,7 @@ import org.springframework.integration.http.inbound.HttpRequestHandlingEndpointS
  * @author Christian Tzolov
  */
 @EnableBinding(Source.class)
-@EnableConfigurationProperties({ HttpSourceProperties.class, SecurityCommonAutoConfigurationProperties.class })
+@EnableConfigurationProperties({ HttpSourceProperties.class})
 public class HttpSourceConfiguration {
 
 	@Autowired

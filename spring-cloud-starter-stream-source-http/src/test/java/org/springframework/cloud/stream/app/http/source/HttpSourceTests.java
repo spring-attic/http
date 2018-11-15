@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.app.http.source;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -25,6 +26,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,10 +41,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -71,6 +76,10 @@ public abstract class HttpSourceTests {
 	@Autowired
 	protected Source channels;
 
+	@Autowired
+	@Qualifier("mediaTypeToString.input")
+	protected MessageChannel mediaConv;
+
 	@LocalServerPort
 	protected int port;
 
@@ -86,6 +95,25 @@ public abstract class HttpSourceTests {
 
 	@TestPropertySource(properties = "http.pathPattern = /foo")
 	public static class NonSecuredTests extends HttpSourceTests {
+
+		@Test
+		public void testMediaType() {
+			this.mediaConv.send(new GenericMessage<>("foo",
+					Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)));
+			Message<?> out = this.messageCollector.forChannel(channels.output()).poll();
+			assertThat(out).isNotNull();
+			assertThat(out.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isInstanceOf(String.class);
+			assertThat(out.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("application/json");
+		}
+
+		@Test
+		public void testMediaTypeNull() {
+			this.mediaConv.send(new GenericMessage<>("foo"));
+			Message<?> out = this.messageCollector.forChannel(channels.output()).poll();
+			assertThat(out).isNotNull();
+			assertThat(out.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isInstanceOf(String.class);
+			assertThat(out.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("application/json");
+		}
 
 		@Test
 		public void testText() {

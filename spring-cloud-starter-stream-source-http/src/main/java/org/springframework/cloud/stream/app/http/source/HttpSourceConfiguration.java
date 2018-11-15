@@ -26,10 +26,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.expression.ValueExpression;
 import org.springframework.integration.http.dsl.Http;
 import org.springframework.integration.http.dsl.HttpRequestHandlerEndpointSpec;
 import org.springframework.integration.http.inbound.HttpRequestHandlingEndpointSupport;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
@@ -79,7 +81,15 @@ public class HttpSourceConfiguration {
 						crossOrigin.origin(this.properties.getCors().getAllowedOrigins())
 								.allowedHeaders(this.properties.getCors().getAllowedHeaders())
 								.allowCredentials(this.properties.getCors().getAllowCredentials()))
-				.requestChannel(this.channels.output());
+				.requestChannel("mediaTypeToString.input");
+	}
+
+	@Bean
+	public IntegrationFlow mediaTypeToString() {
+		return f -> f.enrichHeaders(h -> h.headerExpression(MessageHeaders.CONTENT_TYPE,
+				"headers['" + MessageHeaders.CONTENT_TYPE + "'] == null ? null : "
+						+ "headers['" + MessageHeaders.CONTENT_TYPE + "'].toString()", true))
+				.channel(this.channels.output());
 	}
 
 	/**

@@ -33,6 +33,7 @@
 				<groupId>org.springframework.cloud.stream.app</groupId>
 				<artifactId>app-starters-security-common</artifactId>
 				<version>2.1.0.BUILD-SNAPSHOT</version>
+				<scope>test</scope>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

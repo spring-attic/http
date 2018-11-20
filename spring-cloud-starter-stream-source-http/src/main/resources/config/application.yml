@@ -1,5 +1,5 @@
 spring:
   cloud:
-    app-starter-stream:
+    stream-app-starters:
       security:
         enabled: false

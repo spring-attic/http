@@ -179,8 +179,8 @@ public abstract class HttpSourceTests {
 
 	@TestPropertySource(properties = {
 			"http.mappedRequestHeaders = *",
-			"spring.cloud.stream-app-starters.security.enabled = true",
-			"spring.cloud.stream-app-starters.security.csrf-enabled=false",
+			"spring.cloud.streamapp.security.enabled = true",
+			"spring.cloud.streamapp.security.csrf-enabled=false",
 			"http.cors.allowedOrigins = /bar"
 	})
 	public static class SecuredTests extends HttpSourceTests {
@@ -235,8 +235,8 @@ public abstract class HttpSourceTests {
 
 	@TestPropertySource(properties = {
 			"http.mappedRequestHeaders = *",
-			"spring.cloud.stream-app-starters.security.enabled = true",
-			"spring.cloud.stream-app-starters.security.csrf-enabled=true"
+			"spring.cloud.streamapp.security.enabled = true",
+			"spring.cloud.streamapp.security.csrf-enabled=true"
 	})
 	public static class CsrfEnabledTests extends HttpSourceTests {
 

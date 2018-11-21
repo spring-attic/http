@@ -42,16 +42,6 @@ public class HttpSourceProperties {
 	private String[] mappedRequestHeaders = { DefaultHttpHeaderMapper.HTTP_REQUEST_HEADER_NAME_PATTERN };
 
 	/**
-	 * The security enabling flag.
-	 */
-	private boolean enableSecurity;
-
-	/**
-	 * The security CSRF enabling flag. Makes sense only if 'enableSecurity = true'.
-	 */
-	private boolean enableCsrf;
-
-	/**
 	 * CORS properties.
 	 */
 	@NestedConfigurationProperty
@@ -72,22 +62,6 @@ public class HttpSourceProperties {
 
 	public void setMappedRequestHeaders(String[] mappedRequestHeaders) {
 		this.mappedRequestHeaders = mappedRequestHeaders;
-	}
-
-	public boolean isEnableSecurity() {
-		return this.enableSecurity;
-	}
-
-	public void setEnableSecurity(boolean enableSecurity) {
-		this.enableSecurity = enableSecurity;
-	}
-
-	public boolean isEnableCsrf() {
-		return this.enableCsrf;
-	}
-
-	public void setEnableCsrf(boolean enableCsrf) {
-		this.enableCsrf = enableCsrf;
 	}
 
 	public HttpSourceCorsProperties getCors() {

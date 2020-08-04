@@ -32,7 +32,7 @@ import org.springframework.web.cors.CorsConfiguration;
 public class HttpSourceCorsProperties {
 
 	/**
-	 * List of allowed origins, e.g. "https://domain1.com".
+	 * List of allowed origins, e.g. 'https://domain1.com'.
 	 */
 	private String[] allowedOrigins = { CorsConfiguration.ALL };
 
